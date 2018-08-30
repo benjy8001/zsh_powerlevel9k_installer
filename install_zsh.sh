@@ -1,9 +1,36 @@
 #!/bin/bash
+if which tput >/dev/null 2>&1; then
+	ncolors=$(tput colors)
+fi
+if [ -t 1 ] && [ -n "$ncolors" ] && [ "$ncolors" -ge 8 ]; then
+	RED="$(tput setaf 1)"
+	GREEN="$(tput setaf 2)"
+	YELLOW="$(tput setaf 3)"
+	BLUE="$(tput setaf 4)"
+	BOLD="$(tput bold)"
+	NORMAL="$(tput sgr0)"
+else
+	RED=""
+	GREEN=""
+	YELLOW=""
+	BLUE=""
+	BOLD=""
+	NORMAL=""
+fi
+
+set -e
+
+command -v git >/dev/null 2>&1 || {
+	echo "Error: git is not installed"
+	exit 1
+}
 
 apt-get install git zsh fonts-powerline wget curl tee
 
+printf "${BLUE}Installing Oh My Zsh...${NORMAL}\n"
 sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 
+printf "${BLUE}Installing nerd-fonts...${NORMAL}\n"
 wget https://github.com/ryanoasis/nerd-fonts/releases/download/v2.0.0/Hack.zip
 mkdir hack
 unzip Hack.zip -d hack
@@ -11,10 +38,23 @@ rm Hack.zip
 mv hack /usr/share/fonts/truetype
 fc-cache -f -v
 
-git clone https://github.com/bhilburn/powerlevel9k.git ~/.oh-my-zsh/custom/themes/powerlevel9k
-git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+printf "${BLUE}Cloning powerlevel9k...${NORMAL}\n"
+env git clone https://github.com/bhilburn/powerlevel9k.git ~/.oh-my-zsh/custom/themes/powerlevel9k || {
+	printf "Error: git clone of powerlevel9k repo failed\n"
+	exit 1
+}
+printf "${BLUE}Cloning zsh-autosuggestions...${NORMAL}\n"
+env git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions || {
+	printf "Error: git clone of zsh-autosuggestions repo failed\n"
+	exit 1
+}
+printf "${BLUE}Cloning zsh-syntax-highlighting...${NORMAL}\n"
+env git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || {
+	printf "Error: git clone of zsh-syntax-highlighting repo failed\n"
+	exit 1
+}
 
+printf "${BLUE}Editing ~/.zshrc${NORMAL}\n"
 tee ~/.zshrc << END
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
@@ -144,5 +184,8 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 END
 
+printf "${BLUE}Sourcing ~/.zshrc${NORMAL}\n"
 /bin/zsh -c 'source ~/.zshrc'
+
+printf "${BLUE}Setting zsh as default shell${NORMAL}\n"
 chsh -s /bin/zsh
