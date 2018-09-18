@@ -25,7 +25,7 @@ command -v git >/dev/null 2>&1 || {
 	exit 1
 }
 
-apt-get install git zsh fonts-powerline wget curl tee
+apt-get install -y git zsh fonts-powerline wget curl
 
 printf "${BLUE}Installing Oh My Zsh...${NORMAL}\n"
 sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
