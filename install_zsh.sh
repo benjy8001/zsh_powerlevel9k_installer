@@ -27,9 +27,6 @@ command -v git >/dev/null 2>&1 || {
 
 apt-get install -y git zsh fonts-powerline wget curl
 
-printf "${BLUE}Installing Oh My Zsh...${NORMAL}\n"
-sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
-
 printf "${BLUE}Installing nerd-fonts...${NORMAL}\n"
 wget https://github.com/ryanoasis/nerd-fonts/releases/download/v2.0.0/Hack.zip
 mkdir hack
@@ -183,6 +180,9 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 END
+
+printf "${BLUE}Installing Oh My Zsh...${NORMAL}\n"
+sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 
 printf "${BLUE}Sourcing ~/.zshrc${NORMAL}\n"
 /bin/zsh -c 'source ~/.zshrc'
