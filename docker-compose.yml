@@ -1,0 +1,7 @@
+version: '3.4'
+
+services:
+  debian:
+    image: debian:jessie
+    volumes:
+    - ./:/srv:ro
