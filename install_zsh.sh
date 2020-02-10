@@ -1,4 +1,9 @@
 #!/bin/bash
+# Install script for ZSH and Powerlevel9k
+
+set -e
+set -u
+
 if which tput >/dev/null 2>&1; then
 	ncolors=$(tput colors)
 fi
@@ -18,17 +23,17 @@ else
 	NORMAL=""
 fi
 
-set -e
-
 command -v git >/dev/null 2>&1 || {
-	echo "Error: git is not installed"
+	echo "${RED}Error: git is not installed${NORMAL}"
 	exit 1
 }
 
-apt-get install git zsh fonts-powerline wget curl tee
+command -v tee >/dev/null 2>&1 || {
+	echo "${RED}Error: tee is not installed${NORMAL}"
+	exit 1
+}
 
-printf "${BLUE}Installing Oh My Zsh...${NORMAL}\n"
-sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+apt-get install -y git zsh fonts-powerline wget curl
 
 printf "${BLUE}Installing nerd-fonts...${NORMAL}\n"
 wget https://github.com/ryanoasis/nerd-fonts/releases/download/v2.0.0/Hack.zip
@@ -40,17 +45,17 @@ fc-cache -f -v
 
 printf "${BLUE}Cloning powerlevel9k...${NORMAL}\n"
 env git clone https://github.com/bhilburn/powerlevel9k.git ~/.oh-my-zsh/custom/themes/powerlevel9k || {
-	printf "Error: git clone of powerlevel9k repo failed\n"
+	printf "${RED}Error: git clone of powerlevel9k repo failed${NORMAL}\n"
 	exit 1
 }
 printf "${BLUE}Cloning zsh-autosuggestions...${NORMAL}\n"
 env git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions || {
-	printf "Error: git clone of zsh-autosuggestions repo failed\n"
+	printf "${RED}Error: git clone of zsh-autosuggestions repo failed${NORMAL}\n"
 	exit 1
 }
 printf "${BLUE}Cloning zsh-syntax-highlighting...${NORMAL}\n"
 env git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || {
-	printf "Error: git clone of zsh-syntax-highlighting repo failed\n"
+	printf "${RED}Error: git clone of zsh-syntax-highlighting repo failed\${NORMAL}n"
 	exit 1
 }
 
@@ -183,6 +188,9 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 END
+
+printf "${BLUE}Installing Oh My Zsh...${NORMAL}\n"
+sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 
 printf "${BLUE}Sourcing ~/.zshrc${NORMAL}\n"
 /bin/zsh -c 'source ~/.zshrc'
