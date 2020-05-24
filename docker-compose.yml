@@ -3,5 +3,7 @@ version: '3.4'
 services:
   debian:
     image: debian:jessie
+    tty: true
+    working_dir: /srv
     volumes:
-    - ./:/srv:ro
+    - ./:/srv:rw
