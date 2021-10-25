@@ -1,6 +1,6 @@
 ### Custom ZSH and powerlevel9k autoinstaller for debian
 
-Install software and fonts needed ; customise ~/.zshrc ; etting zsh as default shell
+Install software and fonts needed ; Customise ~/.zshrc ; Setting zsh as default shell
 
 **Installation :**
 
