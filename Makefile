@@ -14,7 +14,8 @@ stop:
 
 run: ## Run the install script on debian
 run: start
-	$(EXEC_DEBIAN) ./install_zsh.sh
+	$(EXEC_DEBIAN) ./install_zsh.sh install
+	$(EXEC_DEBIAN) ./install_zsh.sh setup
 
 connect: ## Connect to the container of the project
 	$(EXEC_DEBIAN)

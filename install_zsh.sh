@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-# Install script for ZSH and Powerlevel9k
+
+#
+# @file  ZSH installer
+# @brief Install script for ZSH and Powerlevel9k
 
 set -o errexit
 set -o pipefail
 set -o nounset
 
+# @description prepare color display for terminal
+#
 prepare_color() {
 	if which tput >/dev/null 2>&1; then
 		ncolors=$(tput colors)
@@ -27,7 +32,11 @@ prepare_color() {
 }
 
 install_software() {
-	apt-get update && apt-get install -y git coreutils zsh fonts-powerline wget curl unzip
+  SUDO=''
+  if (( $EUID != 0 )); then
+      SUDO='sudo'
+  fi
+	$SUDO apt-get update && $SUDO apt-get install -y git coreutils zsh fonts-powerline wget curl unzip
 }
 
 install_fonts() {
@@ -42,20 +51,28 @@ install_fonts() {
 
 install_powerlevel9k() {
 	printf "${BLUE}Cloning powerlevel9k...${NORMAL}\n"
-	env git clone https://github.com/bhilburn/powerlevel9k.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/themes/powerlevel9k || {
+	env git clone https://github.com/bhilburn/powerlevel9k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel9k || {
 		printf "${RED}Error: git clone of powerlevel9k repo failed${NORMAL}\n"
+		exit 1
+	}
+}
+
+install_powerlevel10k() {
+	printf "${BLUE}Cloning powerlevel9k...${NORMAL}\n"
+	env git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k || {
+		printf "${RED}Error: git clone of powerlevel10k repo failed${NORMAL}\n"
 		exit 1
 	}
 }
 
 install_zsh_plugins() {
 	printf "${BLUE}Cloning zsh-autosuggestions...${NORMAL}\n"
-	env git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || {
+	env git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || {
 		printf "${RED}Error: git clone of zsh-autosuggestions repo failed${NORMAL}\n"
 		exit 1
 	}
 	printf "${BLUE}Cloning zsh-syntax-highlighting...${NORMAL}\n"
-	env git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || {
+	env git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || {
 		printf "${RED}Error: git clone of zsh-syntax-highlighting repo failed\${NORMAL}n"
 		exit 1
 	}
@@ -69,14 +86,14 @@ set_zsh_config() {
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH="~/.oh-my-zsh"
+export ZSH="$HOME/.oh-my-zsh"
 
 # Set name of the theme to load. Optionally, if you set this to "random"
 # it'll load a random theme each time that oh-my-zsh is loaded.
 # See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
 
 export TERM="xterm-256color"
-ZSH_THEME="powerlevel9k/powerlevel9k"
+ZSH_THEME="powerlevel10k/powerlevel10k"
 
 HISTSIZE=3000
 HISTFILE=~/.zsh_history
@@ -86,9 +103,10 @@ setopt appendhistory
 setopt sharehistory
 setopt incappendhistory
 
+POWERLEVEL9K_MODE="awesome-patched"
 POWERLEVEL9K_CUSTOM_DEBIAN_ICON="echo -e '\uf306' "
-POWERLEVEL9K_CUSTIM_DEBIAN_ICON_BACKGROUND=234
-POWERLEVEL9K_CUSTIM_DEBIAN_ICON_FOREGROUND=196
+POWERLEVEL9K_CUSTOM_DEBIAN_ICON_BACKGROUND=234
+POWERLEVEL9K_CUSTOM_DEBIAN_ICON_FOREGROUND=196
 
 POWERLEVEL9K_BACKGROUND_JOBS_FOREGROUND=232
 POWERLEVEL9K_BACKGROUND_JOBS_BACKGROUND=178
@@ -161,7 +179,7 @@ plugins=(
   colored-man-pages
 )
 
-source ~/.oh-my-zsh/oh-my-zsh.sh
+source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
@@ -192,21 +210,87 @@ install_oh_my_zsh() {
 
 set_zsh_as_default_shell() {
 	printf "${BLUE}Sourcing ~/.zshrc${NORMAL}\n"
-	/bin/zsh -c 'source ~/.zshrc'
+	/bin/zsh -c "source $HOME/.zshrc"
 
 	printf "${BLUE}Setting zsh as default shell${NORMAL}\n"
 	chsh -s /bin/zsh
+	source $HOME/.zshrc
 }
 
-main() {
-	prepare_color
+install() {
+  clean_before_start
 	install_software
 	install_fonts
 	install_oh_my_zsh
-	install_powerlevel9k
+}
+
+setup() {
+	install_powerlevel10k
 	install_zsh_plugins
 	set_zsh_config
 	set_zsh_as_default_shell
+}
+
+# @description entrypoint of the script
+#
+# @arg $1 action to do
+#
+main() {
+  prepare_color
+  action=$1
+
+  case "$action" in
+      install)
+          install
+          ;;
+      setup)
+          setup
+          ;;
+      help)
+          usage
+          ;;
+      *)
+          usage
+          ;;
+  esac
+}
+
+# @description display the help message
+#
+# @arg $1 string message to display
+#
+usage() {
+	cat <<-EOF
+		Usage: $(basename "$0") [command]
+
+		This script automates install of ZSH, usefull plugins and powerlevel9k
+
+		Commands
+		 install      First step, install packages and ZSH
+		 setup        Second step, install and configuration of plugins
+		 help         This message
+
+	EOF
+	exit
+}
+
+clean_before_start() {
+	printf "${RED}Cleanup${NORMAL}\n"
+	if [ -d ~/.oh-my-zsh ]; then
+		rm -Rf ~/.oh-my-zsh
+	fi
+	if [ -d ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel9k ]; then
+		rm -Rf ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel9k
+	fi
+	if [ -d ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k ]; then
+		rm -Rf ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+	fi
+	if [ -d ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions ]; then
+		rm -Rf ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+	fi
+	if [ -d ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting ]; then
+		rm -Rf ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+	fi
 }
 
 cleanup() {
@@ -219,18 +303,6 @@ cleanup() {
 	fi
 	if [ -d /usr/share/fonts/truetype/hack ]; then
 		rm -Rf /usr/share/fonts/truetype/hack
-	fi
-	if [ -d ~/.oh-my-zsh ]; then
-		rm -Rf ~/.oh-my-zsh
-	fi
-	if [ -d ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/themes/powerlevel9k ]; then
-		rm -Rf ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/themes/powerlevel9k
-	fi
-	if [ -d ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions ]; then
-		rm -Rf ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-	fi
-	if [ -d ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting ]; then
-		rm -Rf ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 	fi
 }
 trap cleanup EXIT
